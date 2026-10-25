@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button, ConfirmModal, useToast } from '../components/ui'
+import { BackupPanel } from '../components/BackupPanel'
 import { useAsyncData, errorMessage } from '../hooks/useAsyncData'
 import {
   countDocuments,
@@ -7,6 +8,7 @@ import {
   countQuestions,
   countSessions,
   countUnresolvedWrongAnswers,
+  countAttempts,
   clearAllData,
   seedSampleData
 } from '../db'
@@ -17,19 +19,21 @@ interface Overview {
   questions: number
   wrongAnswers: number
   sessions: number
+  attempts: number
 }
 
 export function SettingsPage(): React.JSX.Element {
   const overview = useAsyncData<Overview>(
     async () => {
-      const [documents, cards, questions, wrongAnswers, sessions] = await Promise.all([
+      const [documents, cards, questions, wrongAnswers, sessions, attempts] = await Promise.all([
         countDocuments(),
         countCards(),
         countQuestions(),
         countUnresolvedWrongAnswers(),
-        countSessions()
+        countSessions(),
+        countAttempts()
       ])
-      return { documents, cards, questions, wrongAnswers, sessions }
+      return { documents, cards, questions, wrongAnswers, sessions, attempts }
     },
     []
   )
@@ -80,7 +84,8 @@ export function SettingsPage(): React.JSX.Element {
           { label: '知识卡片', value: overview.data?.cards },
           { label: '练习题', value: overview.data?.questions },
           { label: '待巩固错题', value: overview.data?.wrongAnswers },
-          { label: '学习记录', value: overview.data?.sessions }
+          { label: '学习记录', value: overview.data?.sessions },
+          { label: '答题记录', value: overview.data?.attempts }
         ].map((item) => (
           <div className="stat-card" key={item.label}>
             <div className="stat-value">{item.value ?? '—'}</div>
@@ -88,6 +93,8 @@ export function SettingsPage(): React.JSX.Element {
           </div>
         ))}
       </div>
+
+      <BackupPanel />
 
       <div className="panel">
         <div className="panel-head">
@@ -99,7 +106,7 @@ export function SettingsPage(): React.JSX.Element {
           开发模式位于 <code>%APPDATA%\studyflow\IndexedDB</code>，安装版位于{' '}
           <code>%APPDATA%\StudyFlow\IndexedDB</code>。
           <br />
-          备份方法：整份复制上述文件夹即可；清空这些文件夹会导致学习数据永久丢失，请谨慎操作。
+          备份方法：优先使用上方「备份与恢复」导出 JSON 备份文件；也可整份复制上述文件夹。清空这些文件夹会导致学习数据永久丢失。
         </div>
       </div>
 

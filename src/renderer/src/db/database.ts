@@ -9,7 +9,7 @@ import type {
 } from './schema'
 
 export const DB_NAME = 'studyflow'
-export const DB_VERSION = 3
+export const DB_VERSION = 4
 
 export const STORE_DOCUMENTS = 'documents'
 export const STORE_CARDS = 'cards'
@@ -94,6 +94,17 @@ export function getDB(): Promise<IDBPDatabase<StudyFlowDB>> {
             const attempts = db.createObjectStore(STORE_ATTEMPTS, { keyPath: 'id' })
             attempts.createIndex('by-questionId', 'questionId')
             attempts.createIndex('by-answeredAt', 'answeredAt')
+          }
+        }
+        if (oldVersion < 4 && oldVersion >= 1) {
+          // v3 → v4：为旧卡片回填间隔复习的阶梯阶段（从第 0 级开始）。
+          // nextReviewAt / reviewCount 等既有字段保持原样，复习计划不丢失。
+          const store = transaction.objectStore(STORE_CARDS)
+          const cards = await store.getAll()
+          for (const card of cards) {
+            if (card.reviewStage === undefined) {
+              await store.put({ ...card, reviewStage: 0 })
+            }
           }
         }
       },

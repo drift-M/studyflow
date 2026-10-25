@@ -37,4 +37,8 @@ export interface StudyFlowApi {
   importStudyFile(): Promise<ImportStudyFileResult>
   /** 读取资料内容（主进程校验路径与格式后读取） */
   readStudyFile(filePath: string): Promise<ReadStudyFileResult>
+  /** 保存备份 JSON 到用户选择的位置（本地写文件，不上传） */
+  saveBackupFile(json: string): Promise<{ saved: boolean; filePath?: string; error?: string }>
+  /** 打开备份文件并返回其文本内容（本地读取） */
+  openBackupFile(): Promise<{ canceled: boolean; content?: string; error?: string }>
 }

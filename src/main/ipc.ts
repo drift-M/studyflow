@@ -1,5 +1,5 @@
-import { ipcMain, dialog, type BrowserWindow, type OpenDialogOptions } from 'electron'
-import { readFile, stat } from 'node:fs/promises'
+import { ipcMain, dialog, type BrowserWindow, type OpenDialogOptions, type SaveDialogOptions } from 'electron'
+import { readFile, writeFile, stat } from 'node:fs/promises'
 import { basename, extname, isAbsolute } from 'node:path'
 import type {
   ImportStudyFileResult,
@@ -11,6 +11,8 @@ import type {
 const CHANNEL_SELECT_FILE = 'studyflow:select-file'
 const CHANNEL_IMPORT_FILE = 'studyflow:import-file'
 const CHANNEL_READ_FILE = 'studyflow:read-file'
+const CHANNEL_SAVE_BACKUP = 'studyflow:save-backup'
+const CHANNEL_OPEN_BACKUP = 'studyflow:open-backup'
 
 /** 允许导入的扩展名白名单 */
 const ALLOWED_EXTENSIONS = ['.pdf', '.md', '.markdown']
@@ -162,6 +164,74 @@ export function registerIpcHandlers(getParentWindow: () => BrowserWindow | null)
         return fail('文件路径无效')
       }
       return loadStudyFile(filePath)
+    }
+  )
+
+  // ===== 备份文件读写（全程本地，不上传） =====
+
+  ipcMain.handle(
+    CHANNEL_SAVE_BACKUP,
+    async (
+      _event,
+      payload: unknown
+    ): Promise<{ saved: boolean; filePath?: string; error?: string }> => {
+      if (typeof payload !== 'string' || payload.length === 0) {
+        return { saved: false, error: '备份内容无效' }
+      }
+      // 备份 JSON 上限 200MB，防止异常调用写入超大文件
+      if (payload.length > 200 * 1024 * 1024) {
+        return { saved: false, error: '备份内容超出大小限制' }
+      }
+      const parent = getParentWindow()
+      const today = new Date().toISOString().slice(0, 10)
+      const options: SaveDialogOptions = {
+        title: '导出学习数据备份',
+        defaultPath: `studyflow-backup-${today}.json`,
+        filters: [{ name: 'StudyFlow 备份（JSON）', extensions: ['json'] }]
+      }
+      const result = parent
+        ? await dialog.showSaveDialog(parent, options)
+        : await dialog.showSaveDialog(options)
+      if (result.canceled || !result.filePath) {
+        return { saved: false }
+      }
+      try {
+        await writeFile(result.filePath, payload, 'utf-8')
+        return { saved: true, filePath: result.filePath }
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error)
+        return { saved: false, error: `写入备份文件失败：${detail}` }
+      }
+    }
+  )
+
+  ipcMain.handle(
+    CHANNEL_OPEN_BACKUP,
+    async (): Promise<{ canceled: boolean; content?: string; error?: string }> => {
+      const parent = getParentWindow()
+      const options: OpenDialogOptions = {
+        title: '选择备份文件',
+        properties: ['openFile'],
+        filters: [{ name: 'StudyFlow 备份（JSON）', extensions: ['json'] }]
+      }
+      const result = parent
+        ? await dialog.showOpenDialog(parent, options)
+        : await dialog.showOpenDialog(options)
+      if (result.canceled || result.filePaths.length === 0) {
+        return { canceled: true }
+      }
+      const filePath = result.filePaths[0]
+      try {
+        const info = await stat(filePath)
+        if (info.size > 200 * 1024 * 1024) {
+          return { canceled: false, error: '备份文件超过 200MB，不是有效的备份' }
+        }
+        const content = await readFile(filePath, 'utf-8')
+        return { canceled: false, content }
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error)
+        return { canceled: false, error: `读取备份文件失败：${detail}` }
+      }
     }
   )
 }

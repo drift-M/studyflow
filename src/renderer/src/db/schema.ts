@@ -53,6 +53,11 @@ export interface KnowledgeCard {
   lastReviewedAt: number | null
   /** 下次应复习时间；新卡片等于创建时间（立即可复习） */
   nextReviewAt: number
+  /**
+   * 复习阶梯阶段（间隔复习算法）：0=10分钟后，之后 1/3/7/14/30 天递进。
+   * 旧数据经 v4 迁移回填为 0。
+   */
+  reviewStage?: number
   createdAt: number
   updatedAt: number
 }

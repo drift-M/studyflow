@@ -31,6 +31,7 @@ export async function createCard(input: NewCardInput): Promise<KnowledgeCard> {
       reviewCount: 0,
       lastReviewedAt: null,
       nextReviewAt: now,
+      reviewStage: 0,
       createdAt: now,
       updatedAt: now
     }
@@ -149,6 +150,106 @@ export async function markCardMastery(
     return updated
   } catch (error) {
     throw dbError('标记掌握', error)
+  }
+}
+
+export type ReviewRating = 'unfamiliar' | 'vague' | 'mastered'
+
+/**
+ * 间隔复习阶梯（分钟），简单可解释：
+ * 阶段 0 = 10 分钟后；之后每答"已掌握"晋升一级：1 天 → 3 天 → 7 天 → 14 天 → 30 天封顶。
+ * "不熟悉"回到阶段 0；"有点印象"保持在不低于 1 天的阶段。
+ */
+export const REVIEW_LADDER_MINUTES = [10, 1440, 4320, 10080, 20160, 43200]
+
+/** 描述某次评分后的下次复习时间，用于界面提示 */
+export function describeNextReview(rating: ReviewRating, currentStage: number): string {
+  let stage: number
+  if (rating === 'unfamiliar') stage = 0
+  else if (rating === 'vague') stage = Math.max(currentStage, 1)
+  else stage = Math.min(currentStage + 1, REVIEW_LADDER_MINUTES.length - 1)
+  const minutes = REVIEW_LADDER_MINUTES[stage]
+  if (minutes < 60) return `${minutes} 分钟后`
+  const days = minutes / 1440
+  return `${days} 天后`
+}
+
+/**
+ * 按用户评价安排下一次复习（间隔复习核心算法）。
+ * - 不熟悉：回到阶段 0（10 分钟后再次出现）
+ * - 有点印象：保持不低于 1 天的阶段，按阶梯间隔安排
+ * - 已掌握：晋升一级，按新阶梯间隔安排
+ */
+export async function rateCard(
+  id: string,
+  rating: ReviewRating
+): Promise<KnowledgeCard | undefined> {
+  try {
+    const db = await getDB()
+    const card = await db.get(STORE_CARDS, id)
+    if (!card) return undefined
+    const now = Date.now()
+    const currentStage = card.reviewStage ?? 0
+    let stage: number
+    let mastery: CardMastery
+    if (rating === 'unfamiliar') {
+      stage = 0
+      mastery = 'unfamiliar'
+    } else if (rating === 'vague') {
+      stage = Math.max(currentStage, 1)
+      mastery = 'unrated'
+    } else {
+      stage = Math.min(currentStage + 1, REVIEW_LADDER_MINUTES.length - 1)
+      mastery = 'mastered'
+    }
+    const updated: KnowledgeCard = {
+      ...card,
+      reviewStage: stage,
+      mastery,
+      reviewCount: card.reviewCount + 1,
+      lastReviewedAt: now,
+      nextReviewAt: now + REVIEW_LADDER_MINUTES[stage] * 60 * 1000,
+      updatedAt: now
+    }
+    await db.put(STORE_CARDS, updated)
+    return updated
+  } catch (error) {
+    throw dbError('复习评分', error)
+  }
+}
+
+/** 今日待复习的卡片（nextReviewAt 已到期），按到期时间正序 */
+export async function listDueCards(now: number = Date.now()): Promise<KnowledgeCard[]> {
+  try {
+    const db = await getDB()
+    const due = await db.getAllFromIndex(STORE_CARDS, 'by-nextReviewAt', IDBKeyRange.upperBound(now))
+    return due.sort((a, b) => a.nextReviewAt - b.nextReviewAt)
+  } catch (error) {
+    throw dbError('今日待复习', error)
+  }
+}
+
+/** 尚未学习过的卡片（从未复习），按创建时间倒序 */
+export async function listNewCards(): Promise<KnowledgeCard[]> {
+  try {
+    const db = await getDB()
+    const all = await db.getAll(STORE_CARDS)
+    return all.filter((card) => card.reviewCount === 0).sort((a, b) => b.createdAt - a.createdAt)
+  } catch (error) {
+    throw dbError('尚未学习', error)
+  }
+}
+
+/** 已掌握的卡片，按最近复习时间倒序 */
+export async function listMasteredCards(): Promise<KnowledgeCard[]> {
+  try {
+    const db = await getDB()
+    const all = await db.getAll(STORE_CARDS)
+    return all
+      .filter((card) => card.mastery === 'mastered')
+      .sort((a, b) => (b.lastReviewedAt ?? 0) - (a.lastReviewedAt ?? 0))
+  } catch (error) {
+    throw dbError('已掌握列表', error)
   }
 }
 

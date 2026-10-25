@@ -1339,3 +1339,88 @@
 .redo-panel .form-textarea {
   margin-bottom: 10px;
 }
+
+/* ===== 间隔复习 ===== */
+.card-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.card-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    color 0.12s,
+    background 0.12s;
+}
+
+.card-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.card-tab.active {
+  background: var(--primary-weak);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.tab-count {
+  background: var(--fill-hover);
+  border-radius: 999px;
+  font-size: 11.5px;
+  padding: 0 7px;
+  color: var(--text-3);
+}
+
+.card-tab.active .tab-count {
+  background: rgba(79, 110, 247, 0.16);
+  color: var(--primary);
+}
+
+.card-review-box {
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-card-text {
+  font-size: 17px;
+  font-weight: 550;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 60px;
+}
+
+.rate-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.restore-counts {
+  padding-left: 20px;
+  list-style: disc;
+  font-size: 13.5px;
+  color: var(--text-2);
+  margin: 8px 0;
+}
+
+.restore-counts li {
+  margin: 3px 0;
+}

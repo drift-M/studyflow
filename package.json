@@ -1,6 +1,6 @@
 {
   "name": "studyflow",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "description": "StudyFlow 知页 —— 本地优先的 AI 学习桌面应用",
   "main": "./out/main/index.js",
   "author": "StudyFlow",
