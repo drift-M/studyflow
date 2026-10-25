@@ -18,7 +18,7 @@ interface ReceivedRequest {
 let server: Server
 let baseUrl = ''
 const received: ReceivedRequest[] = []
-let mode: 'ok' | 'ok-fenced' | '429' | 'bad-json' | '401-key-in-body' = 'ok'
+let mode: 'ok' | 'ok-fenced' | '429' | 'bad-json' | '401-key-in-body' | 'reasoning-empty' = 'ok'
 
 function reply(response: ServerResponse<IncomingMessage>, status: number, body: string): void {
   response.writeHead(status, { 'Content-Type': 'application/json' })
@@ -52,6 +52,22 @@ beforeAll(async () => {
           break
         case '401-key-in-body':
           reply(response, 401, JSON.stringify({ error: { message: `invalid api key ${SECRET}` } }))
+          break
+        case 'reasoning-empty':
+          // DeepSeek 思考模型真实场景：预算被推理耗尽，content 为空串
+          reply(
+            response,
+            200,
+            JSON.stringify({
+              choices: [
+                {
+                  message: { role: 'assistant', content: '', reasoning_content: 'thinking...' },
+                  finish_reason: 'length'
+                }
+              ],
+              usage: { completion_tokens: 20, completion_tokens_details: { reasoning_tokens: 20 } }
+            })
+          )
           break
       }
     })
@@ -106,6 +122,19 @@ describe('chatCompletion 真实 HTTP 链路', () => {
       const e = error as AiClientError
       expect(e.message).toContain('429')
       expect(e.retryable).toBe(true)
+      return true
+    })
+  })
+
+  it('思考模型空内容（HTTP 200 + reasoning 耗尽预算）→ 精确诊断且不含推理正文', async () => {
+    mode = 'reasoning-empty'
+    await expect(
+      chatCompletion({ baseUrl, model: 'deepseek-flash', messages: [{ role: 'user', content: 'x' }] }, fetch)
+    ).rejects.toSatisfy((error: unknown) => {
+      const message = (error as AiClientError).message
+      expect(message).toContain('思考')
+      expect(message).toContain('20')
+      expect(message).not.toContain('thinking...')
       return true
     })
   })

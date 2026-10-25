@@ -143,11 +143,39 @@ export async function chatCompletion(
   } catch {
     throw new AiClientError('模型服务返回的内容不是有效 JSON', 'invalid-response', { retryable: true })
   }
-  const content = extractMessageContent(json)
-  if (!content) {
-    throw new AiClientError('模型服务返回内容为空或结构不符合 OpenAI 格式', 'invalid-response', { retryable: true })
+  const choice = extractChoiceInfo(json)
+  if (choice?.text) {
+    return choice.text
   }
-  return content
+  throw new AiClientError(
+    describeEmptyContent(choice),
+    'invalid-response',
+    // 真正的模型空输出重试通常有效；结构异常重试无意义，但两者难以完全区分，统一允许重试
+    { retryable: true }
+  )
+}
+
+/**
+ * 空内容/结构异常的精确诊断（不含响应正文，仅结构信息）。
+ * 覆盖 DeepSeek 思考模型（reasoning_content）在输出上限内只产生思考过程的真实场景。
+ */
+function describeEmptyContent(choice: ChoiceInfo | null): string {
+  if (choice === null) {
+    return '模型服务返回结构不符合 OpenAI 格式（缺少 choices 数组），请确认服务地址正确（通常以 /v1 结尾）'
+  }
+  if (choice.text === null && choice.hasReasoning) {
+    const reasoningNote = choice.reasoningTokens
+      ? `本次 ${choice.reasoningTokens} 个输出 token 全部用于思考`
+      : '输出 token 全部用于思考过程'
+    return `模型处于思考模式，${reasoningNote}，没有产生最终答案（finish_reason=${choice.finishReason ?? '未知'}）。请重试、减少生成数量，或改用非思考模型（如 deepseek-chat）`
+  }
+  if (choice.finishReason === 'length') {
+    return '输出被 max_tokens 上限截断，没有产生内容。请减少生成数量后重试，或改用输出预算更充足的模型'
+  }
+  if (!choice.hasMessage) {
+    return `模型服务返回结构不符合 OpenAI 格式（choices 中缺少 message），响应顶层字段：${choice.topLevelKeys.slice(0, 8).join('、') || '（空）'}。请确认这是 OpenAI 兼容的 chat/completions 接口`
+  }
+  return `模型返回了空内容（finish_reason=${choice.finishReason ?? '未知'}），请重试或更换模型`
 }
 
 function describeHttpError(status: number, body: string): string {
@@ -168,13 +196,46 @@ function describeHttpError(status: number, body: string): string {
   }
 }
 
-function extractMessageContent(json: unknown): string | null {
+/**
+ * 从响应中提取 choices[0] 的判定信息。
+ * 注意：reasoning_content（思考过程）绝不会被当作正文返回；
+ * content 为 null 或空字符串时 text 为 null，由调用方按场景给出精确诊断。
+ */
+interface ChoiceInfo {
+  text: string | null
+  finishReason?: string
+  hasReasoning: boolean
+  hasMessage: boolean
+  reasoningTokens?: number
+  /** 响应 JSON 的顶层字段名列表（仅 key，不含值），用于结构异常时的诊断 */
+  topLevelKeys: string[]
+}
+
+function extractChoiceInfo(json: unknown): ChoiceInfo | null {
   if (typeof json !== 'object' || json === null) return null
-  const choices = (json as Record<string, unknown>).choices
+  const root = json as Record<string, unknown>
+  const topLevelKeys = Object.keys(root)
+  const choices = root.choices
   if (!Array.isArray(choices) || choices.length === 0) return null
   const first = choices[0] as Record<string, unknown>
   const message = first.message as Record<string, unknown> | undefined
-  if (message && typeof message.content === 'string') return message.content
-  if (typeof first.text === 'string') return first.text
-  return null
+  const content = message?.content
+  const text =
+    typeof content === 'string' && content.trim().length > 0
+      ? content
+      : typeof first.text === 'string' && first.text.trim().length > 0
+        ? first.text
+        : null
+  const usage = root.usage as Record<string, unknown> | undefined
+  const usageDetails = usage?.completion_tokens_details as Record<string, unknown> | undefined
+  return {
+    text,
+    finishReason: typeof first.finish_reason === 'string' ? first.finish_reason : undefined,
+    hasReasoning:
+      typeof message?.reasoning_content === 'string' && (message.reasoning_content as string).length > 0,
+    hasMessage: message !== undefined && message !== null,
+    reasoningTokens:
+      typeof usageDetails?.reasoning_tokens === 'number' ? usageDetails.reasoning_tokens : undefined,
+    topLevelKeys
+  }
 }

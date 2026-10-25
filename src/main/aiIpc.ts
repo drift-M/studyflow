@@ -12,7 +12,8 @@ const CHANNEL_CANCEL = 'ai:cancel-generate'
 /** 生成输入上限：超长文本截断，控制成本与上下文 */
 export const AI_INPUT_CHAR_LIMIT = 30_000
 /** 单次请求输出 token 上限 */
-export const AI_OUTPUT_TOKEN_LIMIT = 4000
+/** 单次请求输出 token 上限（思考型模型的推理过程也计入，需要留足余量） */
+export const AI_OUTPUT_TOKEN_LIMIT = 8000
 const REQUEST_TIMEOUT_MS = 90_000
 
 /** 进行中的生成任务（callId → AbortController），支持取消 */
@@ -85,8 +86,10 @@ export function registerAiIpcHandlers(): void {
           apiKey: provider.apiKey,
           model: provider.model,
           messages: [{ role: 'user', content: '请只回复两个字：可用' }],
-          maxTokens: 20,
-          timeoutMs: 30_000
+          // 思考型模型（如 deepseek-flash）的推理过程计入 max_tokens，
+          // 预算过小会导致 content 为空（finish_reason=length）
+          maxTokens: 512,
+          timeoutMs: 60_000
         },
         fetch
       )

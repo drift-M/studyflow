@@ -209,7 +209,7 @@ export function AiServicePanel(): React.JSX.Element {
               </div>
             </div>
             <div className="form-hint">
-              费用由你的服务商按用量收取；知页单次生成最多发送约 3 万字符文本、输出上限 4000 tokens，仅在你点击生成时调用。
+              费用由你的服务商按用量收取；知页单次生成最多发送约 3 万字符文本、输出上限 8000 tokens，仅在你点击生成时调用。
             </div>
           </>
         ) : null}

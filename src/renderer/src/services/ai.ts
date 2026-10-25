@@ -15,7 +15,7 @@ import { validateCardBatch, validateQuestionBatch } from './validate'
  */
 
 /** 单条消息的输出预算（20 条 JSON 也足够） */
-const MAX_OUTPUT_TOKENS = 4000
+const MAX_OUTPUT_TOKENS = 8000
 /** 有限重试：最多额外尝试 1 次 */
 const MAX_RETRIES = 1
 /** 生成来源标记回填：提示词要求模型不填 sourceChapter，由本模块注入真实来源 */
