@@ -60,6 +60,13 @@ describe('备份导出与解析', () => {
     expect(summary.sessions).toBe(1)
   })
 
+  it('备份内容不包含任何密钥形态字段或值', async () => {
+    await seedSampleDataset()
+    const json = buildBackupJson(await exportAllData())
+    expect(json).not.toMatch(/api[-_]?key|apikey|secret|token/i)
+    expect(json).not.toMatch(/sk-[A-Za-z0-9_-]{16,}/)
+  })
+
   it('内置二进制内容经 base64 往返后保持一致', async () => {
     const bytes = new Uint8Array([1, 2, 3, 250, 251])
     await createDocument({

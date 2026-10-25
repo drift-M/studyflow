@@ -4,11 +4,12 @@ import {
   buildPdfChunks,
   collectScopeText,
   validateChunksForGeneration,
+  MAX_GENERATION_CHARS,
   type ContentChunk
 } from '../lib/chunks'
 import { loadDocumentText } from '../components/readers/MarkdownReader'
 import { loadPdfDocument, extractAllPageTexts, type ExtractAllProgress } from '../lib/pdf'
-import { getGenerationService } from '../services'
+import { getGenerationService, cancelActiveGeneration } from '../services'
 import type { GenerationMode } from '../services/types'
 import {
   createCard,
@@ -38,6 +39,8 @@ export interface GenerationState {
   savedQuestions: QuizQuestion[]
   /** 规则可生成数量不足时的提示 */
   notice: string | null
+  /** 本次生成使用的模式（用于结果标注） */
+  usedMode: GenerationMode | null
 }
 
 const INITIAL: GenerationState = {
@@ -48,7 +51,8 @@ const INITIAL: GenerationState = {
   progress: null,
   savedCards: [],
   savedQuestions: [],
-  notice: null
+  notice: null,
+  usedMode: null
 }
 
 /** 加载资料的可用文本片段：Markdown 直接分块；PDF 按页提取（带上限） */
@@ -74,12 +78,13 @@ async function loadChunks(doc: StudyDocument): Promise<{ chunks: ContentChunk[];
 }
 
 /**
- * 资料内容生成流程：加载文本片段 → 调用生成服务（当前为演示模式）→ 运行时校验 → 写入数据库。
+ * 资料内容生成流程：加载文本片段 → 调用生成服务（Demo/AI）→ 运行时校验 → 写入数据库。
  */
 export function useGenerate(doc: StudyDocument): {
   state: GenerationState
   loadChunks: () => Promise<void>
   generate: (kind: GenerationKind, mode: GenerationMode, options: GenerateOptions) => Promise<boolean>
+  cancel: () => void
   reset: () => void
 } {
   const [state, setState] = useState<GenerationState>(INITIAL)
@@ -109,6 +114,7 @@ export function useGenerate(doc: StudyDocument): {
       setState((current) => ({ ...current, phase: 'generating', error: null, notice: null }))
       try {
         const text = collectScopeText(state.chunks, options.scopeLabel)
+        const generatedBy = mode === 'ai' ? ('ai' as const) : ('demo' as const)
         const input = {
           sourceTitle: doc.title,
           scopeLabel: options.scopeLabel,
@@ -126,17 +132,19 @@ export function useGenerate(doc: StudyDocument): {
                 front: card.front,
                 back: card.back,
                 explanation: card.explanation,
-                sourceChapter: card.sourceChapter
+                sourceChapter: card.sourceChapter,
+                generatedBy
               })
             )
           }
           setState((current) => ({
             ...current,
             phase: 'done',
+            usedMode: mode,
             savedCards: saved,
             notice:
               saved.length < options.count
-                ? `资料中可提取的内容有限，本次生成了 ${saved.length} 张卡片（目标 ${options.count} 张）`
+                ? `本次生成了 ${saved.length} 张卡片（目标 ${options.count} 张）`
                 : null
           }))
           return true
@@ -153,17 +161,19 @@ export function useGenerate(doc: StudyDocument): {
               answerIndex: question.answerIndex,
               answerText: question.answerText,
               explanation: question.explanation,
-              sourceChapter: question.sourceChapter
+              sourceChapter: question.sourceChapter,
+              generatedBy
             })
           )
         }
         setState((current) => ({
           ...current,
           phase: 'done',
+          usedMode: mode,
           savedQuestions: saved,
           notice:
             saved.length < options.count
-              ? `资料中可提取的内容有限，本次生成了 ${saved.length} 道题（目标 ${options.count} 道）`
+              ? `本次生成了 ${saved.length} 道题（目标 ${options.count} 道）`
               : null
         }))
         return true
@@ -175,9 +185,24 @@ export function useGenerate(doc: StudyDocument): {
     [doc, state.chunks]
   )
 
+  /** 用户取消：中断进行中的模型请求（底层通过 AbortController 真正中断） */
+  const cancel = useCallback((): void => {
+    cancelActiveGeneration()
+    setState((current) =>
+      current.phase === 'generating'
+        ? { ...current, phase: 'idle', error: '已取消本次生成' }
+        : current
+    )
+  }, [])
+
   const reset = useCallback((): void => {
+    cancelActiveGeneration()
     setState(INITIAL)
   }, [])
 
-  return { state, loadChunks: handleLoadChunks, generate, reset }
+  return { state, loadChunks: handleLoadChunks, generate, cancel, reset }
 }
+
+/** AI 模式的输入上限（与主进程 AI_INPUT_CHAR_LIMIT 一致，用于界面提示） */
+export const AI_INPUT_CHAR_LIMIT_UI = 30_000
+void MAX_GENERATION_CHARS

@@ -29,6 +29,36 @@ export type ReadStudyFileResult =
   | { ok: true; data: StudyFileData }
   | { ok: false; error: string }
 
+// ===== AI 模型服务（密钥只在主进程，渲染进程永远拿不到明文） =====
+
+export type AiProviderMode = 'demo' | 'local' | 'api'
+
+export interface AiProviderConfig {
+  mode: AiProviderMode
+  localBaseUrl: string
+  localModel: string
+  apiBaseUrl: string
+  apiModel: string
+}
+
+export interface AiConfigInfo {
+  config: AiProviderConfig
+  hasApiKey: boolean
+  apiKeyPersisted: boolean
+  safeStorageAvailable: boolean
+}
+
+export interface AiGenerateCall {
+  callId: string
+  prompt: string
+  systemPrompt?: string
+  maxTokens?: number
+}
+
+export type AiGenerateResult =
+  | { ok: true; content: string }
+  | { ok: false; error: string; retryable?: boolean; kind?: string }
+
 /** 通过 contextBridge 暴露给渲染进程的最小化 API */
 export interface StudyFlowApi {
   /** 打开原生文件选择框（仅选择，供重新关联文件使用） */
@@ -41,4 +71,16 @@ export interface StudyFlowApi {
   saveBackupFile(json: string): Promise<{ saved: boolean; filePath?: string; error?: string }>
   /** 打开备份文件并返回其文本内容（本地读取） */
   openBackupFile(): Promise<{ canceled: boolean; content?: string; error?: string }>
+  /** 读取 AI 服务配置（不含密钥明文，只有状态标志） */
+  aiGetConfig(): Promise<AiConfigInfo>
+  /** 保存 AI 服务配置；apiKey 传字符串保存、null 清除、undefined 不变 */
+  aiSaveConfig(config: AiProviderConfig, apiKey?: string | null): Promise<AiConfigInfo>
+  /** 仅清除已保存的 API Key */
+  aiClearKey(): Promise<AiConfigInfo>
+  /** 由用户主动触发的连接测试（主进程发起请求） */
+  aiTestConnection(): Promise<{ ok: boolean; message: string }>
+  /** 模型生成（主进程执行请求；渲染进程不接触密钥） */
+  aiGenerate(request: AiGenerateCall): Promise<AiGenerateResult>
+  /** 取消进行中的生成请求 */
+  aiCancelGenerate(callId: string): Promise<boolean>
 }

@@ -48,6 +48,8 @@ export interface KnowledgeCard {
   explanation?: string
   /** 来源章节（Markdown）或页码（PDF），如 "第 3 页"；手动创建为 null */
   sourceChapter?: string | null
+  /** 生成方式：演示规则 / AI 模型 / 手动创建（可选字段，旧记录视为手动） */
+  generatedBy?: 'demo' | 'ai' | 'manual'
   mastery?: CardMastery
   reviewCount: number
   lastReviewedAt: number | null
@@ -77,6 +79,8 @@ export interface QuizQuestion {
   explanation?: string
   /** 来源章节（Markdown）或页码（PDF）；手动创建为 null */
   sourceChapter?: string | null
+  /** 生成方式：演示规则 / AI 模型 / 手动创建（可选字段，旧记录视为手动） */
+  generatedBy?: 'demo' | 'ai' | 'manual'
   createdAt: number
   updatedAt: number
 }

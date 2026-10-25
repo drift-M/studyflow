@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button, ConfirmModal, useToast } from '../components/ui'
 import { BackupPanel } from '../components/BackupPanel'
+import { AiServicePanel } from '../components/AiServicePanel'
 import { useAsyncData, errorMessage } from '../hooks/useAsyncData'
 import {
   countDocuments,
@@ -94,6 +95,8 @@ export function SettingsPage(): React.JSX.Element {
         ))}
       </div>
 
+      <AiServicePanel />
+
       <BackupPanel />
 
       <div className="panel">
@@ -126,6 +129,21 @@ export function SettingsPage(): React.JSX.Element {
 
       <div className="panel">
         <div className="panel-head">
+          <div className="panel-title">关于与隐私</div>
+        </div>
+        <div className="panel-desc">
+          StudyFlow 知页 v0.6.0 · Electron + React + TypeScript
+          <br />
+          <b>数据流说明</b>：学习资料、卡片、错题与复习记录默认保存在本机（IndexedDB），无账号、无云端数据库、无遥测。
+          <br />
+          <b>AI 数据流</b>：演示模式不联网；使用真实模型时，仅你选择的资料文本会发送给你自己配置的服务商（本地模型如 Ollama 完全不出本机），发送前界面会明确提示。
+          <br />
+          <b>故障排查</b>：连接失败 → 确认服务已启动（Ollama 默认 http://localhost:11434/v1）；401 → API Key 有误；404 → 地址通常需要以 /v1 结尾；429 → 频率或额度限制，稍后重试；超时 → 本地模型首次加载较慢，可再试一次。
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="panel-head">
           <div className="panel-title">清空数据（危险操作）</div>
         </div>
         <div className="panel-desc">
@@ -135,17 +153,6 @@ export function SettingsPage(): React.JSX.Element {
           <Button variant="danger" icon="trash" onClick={() => setConfirmClear(true)}>
             清空全部数据
           </Button>
-        </div>
-      </div>
-
-      <div className="panel">
-        <div className="panel-head">
-          <div className="panel-title">关于</div>
-        </div>
-        <div className="panel-desc">
-          StudyFlow 知页 v0.2.0 · Electron + React + TypeScript
-          <br />
-          无账号、无云端、无遥测，学习数据完全属于你。
         </div>
       </div>
 

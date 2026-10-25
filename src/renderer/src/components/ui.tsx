@@ -38,7 +38,7 @@ export function Button({
 
 /* ===== 徽标 ===== */
 
-export type BadgeVariant = 'md' | 'pdf' | 'ok' | 'gray' | 'warn'
+export type BadgeVariant = 'md' | 'pdf' | 'ok' | 'gray' | 'warn' | 'ai-badge' | 'demo-badge'
 
 export function Badge({
   variant,

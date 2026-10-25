@@ -10,7 +10,13 @@ const api: StudyFlowApi = {
   importStudyFile: () => ipcRenderer.invoke('studyflow:import-file'),
   readStudyFile: (filePath) => ipcRenderer.invoke('studyflow:read-file', filePath),
   saveBackupFile: (json) => ipcRenderer.invoke('studyflow:save-backup', json),
-  openBackupFile: () => ipcRenderer.invoke('studyflow:open-backup')
+  openBackupFile: () => ipcRenderer.invoke('studyflow:open-backup'),
+  aiGetConfig: () => ipcRenderer.invoke('ai:get-config'),
+  aiSaveConfig: (config, apiKey) => ipcRenderer.invoke('ai:save-config', config, apiKey),
+  aiClearKey: () => ipcRenderer.invoke('ai:clear-key'),
+  aiTestConnection: () => ipcRenderer.invoke('ai:test-connection'),
+  aiGenerate: (request) => ipcRenderer.invoke('ai:generate', request),
+  aiCancelGenerate: (callId) => ipcRenderer.invoke('ai:cancel-generate', callId)
 }
 
 try {

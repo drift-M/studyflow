@@ -49,6 +49,12 @@ function MasteryBadge({ card }: { card: KnowledgeCard }): React.JSX.Element | nu
   return null
 }
 
+function GeneratedByBadge({ card }: { card: KnowledgeCard }): React.JSX.Element | null {
+  if (card.generatedBy === 'ai') return <Badge variant="ai-badge">AI 生成</Badge>
+  if (card.generatedBy === 'demo') return <Badge variant="demo-badge">演示生成</Badge>
+  return null
+}
+
 interface ReviewSession {
   queue: KnowledgeCard[]
   index: number
@@ -448,6 +454,7 @@ export function CardsPage({
                 </div>
                 <div className="card-actions">
                   <MasteryBadge card={card} />
+                  <GeneratedByBadge card={card} />
                   <Button small variant="ghost" icon="eye" onClick={() => {
                     setEditTarget(card)
                     setEditForm({

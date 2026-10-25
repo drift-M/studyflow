@@ -1,11 +1,21 @@
-import type { GenerationMode, GenerationService } from './types'
+import type { GenerationService } from './types'
 import { demoGenerationService } from './demo'
-import { aiGenerationService, AI_MODE_HINT } from './ai'
+import { aiGenerationService, cancelActiveGeneration } from './ai'
+import type { AiProviderMode } from '../../../preload/api-types'
 
-/** 按模式获取生成服务。AI 模式未配置时界面应展示 unconfiguredHint 并允许切回演示模式 */
+export type GenerationMode = 'demo' | 'ai'
+
+/** 设置页的模式 → 生成服务：demo 用规则；local/api 都走 AI 服务（由主进程配置决定） */
 export function getGenerationService(mode: GenerationMode): GenerationService {
   return mode === 'ai' ? aiGenerationService : demoGenerationService
 }
 
-export { AI_MODE_HINT }
-export type { GenerationMode, GenerationService }
+/** 设置模式 → 界面显示标签 */
+export function describeGenerationMode(mode: AiProviderMode, modelName?: string): string {
+  if (mode === 'demo') return '演示模式 · 规则生成（非 AI 调用）'
+  if (mode === 'local') return `本地模型${modelName ? ` · ${modelName}` : ''}`
+  return `自备 API${modelName ? ` · ${modelName}` : ''}`
+}
+
+export { cancelActiveGeneration }
+export type { GenerationService }

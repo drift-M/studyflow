@@ -98,16 +98,17 @@ export async function restoreData(
         }
       }
       await tx.done
-    } catch (error) {
-      // 任何写入失败都要显式中止事务：同步抛出的错误不会自动回滚，
-      // 不中止的话已执行的 clear/put 会随事务提交，留下半份数据
-      try {
-        tx.abort()
-      } catch {
-        /* 事务已自行中止时忽略 */
+      } catch (error) {
+        // 任何写入失败都要显式中止事务：同步抛出的错误不会自动回滚，
+        // 不中止的话已执行的 clear/put 会随事务提交，留下半份数据
+        tx.done.catch(() => {}) // abort 会让 done 拒绝，这里吞掉避免未处理拒绝
+        try {
+          tx.abort()
+        } catch {
+          /* 事务已自行中止时忽略 */
+        }
+        throw error
       }
-      throw error
-    }
   } catch (error) {
     throw dbError(`恢复数据（${strategy === 'merge' ? '合并' : '替换'}模式）`, error)
   }

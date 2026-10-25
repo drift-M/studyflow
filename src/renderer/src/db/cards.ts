@@ -8,6 +8,7 @@ export interface NewCardInput {
   tags?: string[]
   explanation?: string
   sourceChapter?: string | null
+  generatedBy?: 'demo' | 'ai' | 'manual'
 }
 
 /** 复习间隔：答对/复习后 24 小时内不再计入待复习 */
@@ -27,6 +28,7 @@ export async function createCard(input: NewCardInput): Promise<KnowledgeCard> {
       tags: input.tags ?? [],
       explanation: input.explanation?.trim() || undefined,
       sourceChapter: input.sourceChapter ?? null,
+      generatedBy: input.generatedBy ?? 'manual',
       mastery: 'unrated',
       reviewCount: 0,
       lastReviewedAt: null,

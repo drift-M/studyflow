@@ -4,6 +4,7 @@ import { pathToFileURL } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { registerIpcHandlers } from './ipc'
+import { registerAiIpcHandlers } from './aiIpc'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -104,6 +105,7 @@ app.whenReady().then(() => {
   })
 
   registerIpcHandlers(() => mainWindow)
+  registerAiIpcHandlers()
 
   createWindow()
 

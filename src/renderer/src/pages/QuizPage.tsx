@@ -519,6 +519,11 @@ export function QuizPage(): React.JSX.Element {
               <div className="quiz-top">
                 <div className="quiz-question">{question.question}</div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                  {question.generatedBy === 'ai' ? (
+                    <Badge variant="ai-badge">AI 生成</Badge>
+                  ) : question.generatedBy === 'demo' ? (
+                    <Badge variant="demo-badge">演示生成</Badge>
+                  ) : null}
                   {question.sourceChapter ? (
                     <Badge variant="gray">{question.sourceChapter}</Badge>
                   ) : null}

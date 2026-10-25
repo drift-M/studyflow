@@ -16,6 +16,7 @@ export interface NewQuestionInput {
   answerText?: string
   explanation?: string
   sourceChapter?: string | null
+  generatedBy?: 'demo' | 'ai' | 'manual'
 }
 
 function assertInput(input: NewQuestionInput): {
@@ -65,6 +66,7 @@ export async function createQuestion(input: NewQuestionInput): Promise<QuizQuest
       answer,
       explanation: input.explanation?.trim() || undefined,
       sourceChapter: input.sourceChapter ?? null,
+      generatedBy: input.generatedBy ?? 'manual',
       createdAt: now,
       updatedAt: now
     }

@@ -180,13 +180,12 @@ describe('AI 输出运行时校验', () => {
   })
 })
 
-describe('AI 服务当前状态', () => {
-  it('未配置状态下调用会给出明确提示而不是假装成功', async () => {
-    const { aiGenerationService, AI_MODE_HINT } = await import('../ai')
-    expect(aiGenerationService.isConfigured()).toBe(false)
+describe('AI 服务（真实接入版）', () => {
+  it('未在桌面环境（无 window.api）时给出明确提示而不是假装成功', async () => {
+    const { aiGenerationService } = await import('../ai')
+    expect(aiGenerationService.isConfigured()).toBe(true)
     await expect(
       aiGenerationService.generateCards({ sourceTitle: 'T', scopeLabel: 'S', text: 't', count: 5 })
-    ).rejects.toThrow('演示模式')
-    expect(AI_MODE_HINT).toContain('演示模式')
+    ).rejects.toThrow('桌面应用')
   })
 })
