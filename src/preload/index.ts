@@ -7,6 +7,7 @@ import type { StudyFlowApi } from './api-types'
  */
 const api: StudyFlowApi = {
   selectStudyFile: () => ipcRenderer.invoke('studyflow:select-file'),
+  importStudyFile: () => ipcRenderer.invoke('studyflow:import-file'),
   readStudyFile: (filePath) => ipcRenderer.invoke('studyflow:read-file', filePath)
 }
 

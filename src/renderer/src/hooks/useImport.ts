@@ -10,8 +10,8 @@ function stripExtension(fileName: string): string {
 
 /**
  * 导入学习资料的完整流程：
- * 原生文件选择（Electron 对话框）→ 主进程校验并读取 → 写入 IndexedDB。
- * 返回是否导入成功，便于调用方刷新列表。
+ * 原生文件选择（Electron 对话框）→ 主进程校验元数据 → 仅保存文件引用到 IndexedDB。
+ * 文件内容不在导入时读取/存储，打开资料时按需从原始路径读取。
  */
 export function useImportDocument(): {
   importDocument: () => Promise<boolean>
@@ -27,24 +27,18 @@ export function useImportDocument(): {
     }
     setImporting(true)
     try {
-      const selection = await window.api.selectStudyFile()
-      if (selection.canceled || !selection.filePath) {
+      const result = await window.api.importStudyFile()
+      if (result.canceled) {
         return false
       }
-      const result = await window.api.readStudyFile(selection.filePath)
-      if (!result.ok) {
-        push(result.error, 'error')
-        return false
-      }
-      const file = result.data
       const document = await createDocument({
-        title: stripExtension(file.fileName),
-        fileName: file.fileName,
-        fileType: file.fileType,
-        fileSize: file.fileSize,
-        content: file.content
+        title: stripExtension(result.fileName),
+        fileName: result.fileName,
+        fileType: result.fileType,
+        fileSize: result.fileSize,
+        sourcePath: result.filePath
       })
-      push(`已导入「${document.title}」`, 'success')
+      push(`已导入「${document.title}」，点击打开即可阅读`, 'success')
       return true
     } catch (error) {
       push(errorMessage(error), 'error')

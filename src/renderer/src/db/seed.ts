@@ -4,6 +4,7 @@ import { createCard } from './cards'
 import { createQuestion } from './quiz'
 import { recordWrongAnswer } from './wrongAnswers'
 import { addSession } from './sessions'
+import { samplePdfBytes } from '../lib/samplePdfBase64'
 
 const SAMPLE_MARK = '示例-'
 
@@ -50,6 +51,15 @@ export async function seedSampleData(): Promise<{ seeded: boolean }> {
 
 ## 特征值与特征向量
 对方针阵 A，若存在非零向量 v 与标量 λ 满足 Av = λv，则 λ 是特征值，v 是特征向量。`
+  })
+
+  const pdfBytes = samplePdfBytes()
+  await createDocument({
+    title: 'PDF 阅读演示',
+    fileName: `${SAMPLE_MARK}PDF阅读演示.pdf`,
+    fileType: 'pdf',
+    fileSize: pdfBytes.byteLength,
+    content: pdfBytes
   })
 
   await createCard({

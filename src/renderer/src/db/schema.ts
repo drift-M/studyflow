@@ -14,8 +14,18 @@ export interface StudyDocument {
   fileType: DocumentFileType
   /** 字节数 */
   fileSize: number
-  /** Markdown 存 UTF-8 文本；PDF 存原始二进制。仅存 IndexedDB，不写 localStorage */
-  content: string | Uint8Array
+  /**
+   * 原始文件在本机的绝对路径。正常导入的资料只保存路径引用，
+   * 打开时通过主进程读取；为 null 表示内容内联存储（示例数据或旧版本导入）。
+   */
+  sourcePath?: string | null
+  /** PDF 总页数，首次打开时更新；非 PDF 为 null */
+  pageCount?: number | null
+  /**
+   * 内联内容：Markdown 存 UTF-8 文本；PDF 存原始二进制。
+   * 仅 sourcePath 为 null 的资料使用（示例数据 / v1 旧数据）。
+   */
+  content?: string | Uint8Array
   status: 'imported'
   note?: string
   importedAt: number

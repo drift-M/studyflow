@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Badge, Button, ConfirmModal, EmptyState, Modal, useToast } from '../components/ui'
+import { Badge, Button, ConfirmModal, EmptyState, useToast } from '../components/ui'
 import { useAsyncData, errorMessage } from '../hooks/useAsyncData'
 import { useImportDocument } from '../hooks/useImport'
 import { listDocuments, deleteDocument, type StudyDocument } from '../db'
@@ -9,13 +9,16 @@ function DocumentTypeBadge({ fileType }: { fileType: StudyDocument['fileType'] }
   return fileType === 'pdf' ? <Badge variant="pdf">PDF</Badge> : <Badge variant="md">Markdown</Badge>
 }
 
-export function DocumentsPage(): React.JSX.Element {
+export function DocumentsPage({
+  onOpenDocument
+}: {
+  onOpenDocument: (docId: string) => void
+}): React.JSX.Element {
   const documents = useAsyncData(listDocuments, [])
   const { importDocument, importing } = useImportDocument()
   const { push } = useToast()
   const [confirmTarget, setConfirmTarget] = useState<StudyDocument | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [previewTarget, setPreviewTarget] = useState<StudyDocument | null>(null)
 
   const handleImport = async (): Promise<void> => {
     if (await importDocument()) {
@@ -45,7 +48,7 @@ export function DocumentsPage(): React.JSX.Element {
           <h1 className="page-title">我的资料</h1>
           <p className="page-subtitle">
             {documents.data
-              ? `共 ${documents.data.length} 份资料 · 支持导入 PDF 与 Markdown`
+              ? `共 ${documents.data.length} 份资料 · 点击任意资料进入阅读`
               : '支持导入 PDF 与 Markdown 文件'}
           </p>
         </div>
@@ -72,21 +75,23 @@ export function DocumentsPage(): React.JSX.Element {
               <span style={{ textAlign: 'right' }}>操作</span>
             </div>
             {documents.data.map((doc) => (
-              <div className="list-row doc-grid" key={doc.id}>
-                <div style={{ minWidth: 0 }}>
-                  <div className="doc-name">{doc.title}</div>
-                  <div className="doc-file">{doc.fileName}</div>
-                </div>
+              <div className="list-row doc-grid doc-row" key={doc.id}>
+                <button
+                  className="doc-name doc-name-btn"
+                  onClick={() => onOpenDocument(doc.id)}
+                  title={doc.sourcePath ?? '内置内容'}
+                >
+                  {doc.title}
+                  <span className="doc-file">{doc.fileName}</span>
+                </button>
                 <DocumentTypeBadge fileType={doc.fileType} />
                 <span className="cell-muted">{formatFileSize(doc.fileSize)}</span>
                 <span className="cell-muted">{formatRelative(doc.importedAt)}</span>
                 <Badge variant="ok">已导入</Badge>
                 <div className="doc-actions">
-                  {doc.fileType === 'markdown' ? (
-                    <Button small icon="eye" onClick={() => setPreviewTarget(doc)}>
-                      预览
-                    </Button>
-                  ) : null}
+                  <Button small icon="eye" onClick={() => onOpenDocument(doc.id)}>
+                    打开
+                  </Button>
                   <Button small variant="danger" icon="trash" onClick={() => setConfirmTarget(doc)}>
                     删除
                   </Button>
@@ -98,7 +103,7 @@ export function DocumentsPage(): React.JSX.Element {
           <EmptyState
             icon="import"
             title="还没有学习资料"
-            desc="点击右上角「导入资料」，选择 PDF 或 Markdown 文件。文件内容会保存在本机的 IndexedDB 中，不会上传到任何服务器。"
+            desc="点击右上角「导入资料」，选择 PDF 或 Markdown 文件。知页只在本机记录文件引用与阅读进度，不会上传任何内容。"
           />
         )}
       </div>
@@ -110,7 +115,9 @@ export function DocumentsPage(): React.JSX.Element {
           <>
             确定删除「{confirmTarget?.title}」吗？
             <br />
-            关联的知识卡片、练习题与错题记录也会一并删除，操作不可恢复。
+            关联的知识卡片、练习题与错题记录也会一并删除。
+            <br />
+            <b>你电脑上的原始文件不会被删除。</b>
           </>
         }
         confirmText="删除"
@@ -119,16 +126,6 @@ export function DocumentsPage(): React.JSX.Element {
         onConfirm={handleDelete}
         onClose={() => setConfirmTarget(null)}
       />
-
-      <Modal
-        open={!!previewTarget}
-        title={previewTarget?.fileName ?? ''}
-        footer={<Button onClick={() => setPreviewTarget(null)}>关闭</Button>}
-      >
-        <div className="preview-content">
-          {typeof previewTarget?.content === 'string' ? previewTarget.content : ''}
-        </div>
-      </Modal>
     </div>
   )
 }

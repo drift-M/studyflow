@@ -8,7 +8,7 @@ import type {
 } from './schema'
 
 export const DB_NAME = 'studyflow'
-export const DB_VERSION = 1
+export const DB_VERSION = 2
 
 export const STORE_DOCUMENTS = 'documents'
 export const STORE_CARDS = 'cards'
@@ -50,7 +50,7 @@ let dbPromise: Promise<IDBPDatabase<StudyFlowDB>> | null = null
 export function getDB(): Promise<IDBPDatabase<StudyFlowDB>> {
   if (!dbPromise) {
     dbPromise = openDB<StudyFlowDB>(DB_NAME, DB_VERSION, {
-      upgrade(db, oldVersion) {
+      async upgrade(db, oldVersion, _newVersion, transaction) {
         // 版本升级时按 oldVersion 逐级迁移，已发布的分支不要改动
         if (oldVersion < 1) {
           const documents = db.createObjectStore(STORE_DOCUMENTS, { keyPath: 'id' })
@@ -65,6 +65,21 @@ export function getDB(): Promise<IDBPDatabase<StudyFlowDB>> {
           wrongAnswers.createIndex('by-lastWrongAt', 'lastWrongAt')
           const sessions = db.createObjectStore(STORE_SESSIONS, { keyPath: 'id' })
           sessions.createIndex('by-startedAt', 'startedAt')
+        }
+        if (oldVersion < 2 && oldVersion >= 1) {
+          // v1 → v2：为旧记录补充 sourcePath / pageCount 字段。
+          // 旧记录的 content 保留原样，阅读器会回退到内联内容，不丢失任何用户数据。
+          const store = transaction.objectStore(STORE_DOCUMENTS)
+          const docs = await store.getAll()
+          for (const doc of docs) {
+            if (doc.sourcePath === undefined || doc.pageCount === undefined) {
+              await store.put({
+                ...doc,
+                sourcePath: doc.sourcePath ?? null,
+                pageCount: doc.pageCount ?? null
+              })
+            }
+          }
         }
       },
       blocked() {

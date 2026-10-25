@@ -23,7 +23,10 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
-    "idb": "^8.0.4"
+    "dompurify": "^3.4.17",
+    "idb": "^8.0.4",
+    "marked": "^18.1.1",
+    "pdfjs-dist": "^6.4.299"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.1",

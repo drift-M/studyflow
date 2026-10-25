@@ -6,7 +6,10 @@ export interface NewStudyDocumentInput {
   fileName: string
   fileType: StudyDocument['fileType']
   fileSize: number
-  content: StudyDocument['content']
+  /** 内联内容（示例数据 / 旧版数据使用）；正常导入传 sourcePath，不传 content */
+  content?: StudyDocument['content']
+  /** 原始文件绝对路径；正常导入必填，示例数据为空 */
+  sourcePath?: string | null
   note?: string
 }
 
@@ -19,6 +22,8 @@ export async function createDocument(input: NewStudyDocumentInput): Promise<Stud
       fileName: input.fileName,
       fileType: input.fileType,
       fileSize: input.fileSize,
+      sourcePath: input.sourcePath ?? null,
+      pageCount: null,
       content: input.content,
       status: 'imported',
       note: input.note,
@@ -67,7 +72,12 @@ export async function countDocuments(): Promise<number> {
 /** 返回更新后的记录；数据不存在时返回 undefined */
 export async function updateDocument(
   id: string,
-  patch: Partial<Pick<StudyDocument, 'title' | 'note'>>
+  patch: Partial<
+    Pick<
+      StudyDocument,
+      'title' | 'note' | 'sourcePath' | 'fileName' | 'fileSize' | 'pageCount'
+    >
+  >
 ): Promise<StudyDocument | undefined> {
   try {
     const db = await getDB()

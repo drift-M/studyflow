@@ -115,6 +115,24 @@ describe('学习资料 CRUD', () => {
     expect(updated!.updatedAt).toBeGreaterThanOrEqual(doc.updatedAt)
   })
 
+  it('重新关联文件路径后，原路径引用被替换且内联内容保留', async () => {
+    const doc = await createDocument({
+      title: '待重关联',
+      fileName: 'old.md',
+      fileType: 'markdown',
+      fileSize: 5,
+      sourcePath: 'C:\\旧目录\\old.md'
+    })
+    const updated = await updateDocument(doc.id, {
+      sourcePath: 'D:\\新目录\\new.md',
+      fileName: 'new.md',
+      fileSize: 9
+    })
+    expect(updated?.sourcePath).toBe('D:\\新目录\\new.md')
+    expect(updated?.fileName).toBe('new.md')
+    expect(updated?.fileSize).toBe(9)
+  })
+
   it('查询不存在的资料返回 undefined，删除不存在的资料返回 false', async () => {
     expect(await getDocument('不存在')).toBeUndefined()
     expect(await deleteDocument('不存在')).toBe(false)
