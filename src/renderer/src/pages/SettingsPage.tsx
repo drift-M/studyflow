@@ -132,7 +132,7 @@ export function SettingsPage(): React.JSX.Element {
           <div className="panel-title">关于与隐私</div>
         </div>
         <div className="panel-desc">
-          StudyFlow 知页 v0.6.0 · Electron + React + TypeScript
+          StudyFlow 知页 v0.6.1 · Electron + React + TypeScript
           <br />
           <b>数据流说明</b>：学习资料、卡片、错题与复习记录默认保存在本机（IndexedDB），无账号、无云端数据库、无遥测。
           <br />

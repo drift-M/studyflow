@@ -4,9 +4,10 @@
 
 ## 下载安装（Windows）
 
-安装包位于本仓库构建输出：`dist/studyflow-0.6.0-setup.exe`（约 132 MB，Windows 10/11 x64）。
+当前发布候选版：`dist/studyflow-0.6.1-setup.exe`（约 132 MB，Windows 10/11 x64）。
 
-- SHA-256：`6fe4f407166d7d05d0f8a56969a3135bfa7a4ea1626baeedaa674853cf60be99`
+- SHA-256：`87cf60c20e76471064352163a4ed36a8c478e563109a90e2483c83a76ccfcee4`
+- 上一版本归档：`dist/archive/studyflow-0.6.0-setup.exe`（SHA-256：`6fe4f407166d7d05d0f8a56969a3135bfa7a4ea1626baeedaa674853cf60be99`）
 
 - 双击安装，可选择安装目录；安装后自动创建桌面快捷方式
 - 应用未做代码签名，首次运行时 Windows SmartScreen 可能提示「更多信息 → 仍要运行」

@@ -47,7 +47,7 @@ export function Sidebar({
           </button>
         ))}
       </nav>
-      <div className="sidebar-footer">v0.2.0 · 数据仅存本地</div>
+      <div className="sidebar-footer">v0.6.1 · 数据仅存本地</div>
     </aside>
   )
 }
