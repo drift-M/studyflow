@@ -83,6 +83,7 @@ export async function seedSampleData(): Promise<{ seeded: boolean }> {
 
   const q1 = await createQuestion({
     documentId: ml.id,
+    type: 'choice',
     question: '下列哪种学习方式使用"有标注数据"进行训练？',
     options: ['监督学习', '无监督学习', '强化学习', '随机学习'],
     answerIndex: 0,
@@ -90,6 +91,7 @@ export async function seedSampleData(): Promise<{ seeded: boolean }> {
   })
   await createQuestion({
     documentId: ml.id,
+    type: 'choice',
     question: '特征（Feature）指的是什么？',
     options: ['模型的输出', '描述样本的属性', '损失函数', '学习率'],
     answerIndex: 1,

@@ -68,3 +68,36 @@ export async function extractPageText(
     .trim()
   return { pageNumber, text, empty: text.length === 0 }
 }
+
+/** 全量文本提取的上限：页数与总字符数，防止超长文档阻塞界面 */
+export const MAX_EXTRACT_PAGES = 300
+export const MAX_EXTRACT_CHARS = 120_000
+
+export interface ExtractAllProgress {
+  page: number
+  total: number
+}
+
+/** 提取整本 PDF 的文本（按页），达到上限时提前停止并在结果中标注 */
+export async function extractAllPageTexts(
+  doc: PDFDocumentProxy,
+  onProgress?: (progress: ExtractAllProgress) => void
+): Promise<{ pages: PageTextResult[]; truncated: boolean }> {
+  const totalPages = doc.numPages
+  const boundedPages = Math.min(totalPages, MAX_EXTRACT_PAGES)
+  const pages: PageTextResult[] = []
+  let totalChars = 0
+  let truncated = boundedPages < totalPages
+
+  for (let pageNumber = 1; pageNumber <= boundedPages; pageNumber++) {
+    const result = await extractPageText(doc, pageNumber)
+    pages.push(result)
+    totalChars += result.text.length
+    onProgress?.({ page: pageNumber, total: boundedPages })
+    if (totalChars >= MAX_EXTRACT_CHARS) {
+      truncated = true
+      break
+    }
+  }
+  return { pages, truncated }
+}

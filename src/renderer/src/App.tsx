@@ -40,7 +40,9 @@ function App(): React.JSX.Element {
               onNavigate={(page) => setView({ kind: 'page', page })}
             />
           )}
-          {view.kind === 'page' && view.page === 'cards' && <CardsPage />}
+          {view.kind === 'page' && view.page === 'cards' && (
+            <CardsPage onOpenDocument={(docId) => setView({ kind: 'docDetail', docId })} />
+          )}
           {view.kind === 'page' && view.page === 'quiz' && <QuizPage />}
           {view.kind === 'page' && view.page === 'wrongbook' && (
             <WrongBookPage onNavigate={(page) => setView({ kind: 'page', page })} />

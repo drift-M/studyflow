@@ -1120,3 +1120,222 @@
   margin: 0 0 12px;
   border-radius: 0;
 }
+
+/* ===== 生成弹窗 ===== */
+.gen-mode-banner {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+  line-height: 1.6;
+  font-size: 12.5px;
+}
+
+.gen-notice {
+  margin: 10px 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--warn-weak);
+  color: var(--warn);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.gen-count-row {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.gen-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-1);
+  cursor: pointer;
+}
+
+.gen-results {
+  margin: 6px 0 14px;
+}
+
+.gen-results-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--success);
+  margin-bottom: 8px;
+}
+
+.gen-results-list {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--border-weak);
+  border-radius: 8px;
+}
+
+.gen-result-item {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border-weak);
+  font-size: 12.5px;
+}
+
+.gen-result-item:last-child {
+  border-bottom: none;
+}
+
+.gen-result-q {
+  font-weight: 550;
+}
+
+.gen-result-a {
+  color: var(--text-2);
+  margin-top: 2px;
+}
+
+.gen-result-src {
+  color: var(--text-3);
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+
+/* ===== 卡片翻面与来源 ===== */
+.card-flip {
+  cursor: pointer;
+}
+
+.card-side-label {
+  font-size: 11px;
+  color: var(--text-3);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.card-explanation {
+  margin-top: 7px;
+  padding: 8px 11px;
+  background: var(--warn-weak);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--warn);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.card-source-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.card-source-link:hover {
+  text-decoration: underline;
+}
+
+/* ===== 答题会话 ===== */
+.quiz-session-panel {
+  max-width: 720px;
+}
+
+.quiz-option-click {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text-1);
+  transition:
+    border-color 0.12s,
+    background 0.12s;
+}
+
+.quiz-option-click:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+
+.quiz-option-click.selected {
+  border-color: var(--primary);
+  background: var(--primary-weak);
+}
+
+.quiz-option-click.wrong {
+  border-color: #f0b6b9;
+  background: var(--danger-weak);
+  color: var(--danger);
+}
+
+.quiz-options-static .quiz-option {
+  background: var(--surface);
+}
+
+.quiz-verdict {
+  margin-top: 12px;
+  padding: 9px 13px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 550;
+}
+
+.quiz-verdict.correct {
+  background: var(--success-weak);
+  color: var(--success);
+}
+
+.quiz-verdict.wrong {
+  background: var(--danger-weak);
+  color: var(--danger);
+}
+
+.quiz-reference {
+  margin-top: 12px;
+  padding: 10px 13px;
+  background: var(--info-weak);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-1);
+  white-space: pre-wrap;
+}
+
+.quiz-reference-title {
+  font-size: 11.5px;
+  color: #3565c9;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.session-summary-box {
+  padding: 20px 18px;
+}
+
+.stat-row {
+  display: flex;
+  gap: 32px;
+}
+
+/* ===== 错题重做 ===== */
+.redo-panel {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fafbfc;
+  width: 100%;
+}
+
+.redo-title {
+  font-size: 13px;
+  font-weight: 550;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.redo-panel .form-textarea {
+  margin-bottom: 10px;
+}

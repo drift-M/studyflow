@@ -4,17 +4,19 @@ import type {
   KnowledgeCard,
   QuizQuestion,
   WrongAnswer,
-  StudySession
+  StudySession,
+  AnswerRecord
 } from './schema'
 
 export const DB_NAME = 'studyflow'
-export const DB_VERSION = 2
+export const DB_VERSION = 3
 
 export const STORE_DOCUMENTS = 'documents'
 export const STORE_CARDS = 'cards'
 export const STORE_QUESTIONS = 'questions'
 export const STORE_WRONG_ANSWERS = 'wrongAnswers'
 export const STORE_SESSIONS = 'sessions'
+export const STORE_ATTEMPTS = 'attempts'
 
 export interface StudyFlowDB extends DBSchema {
   documents: {
@@ -41,6 +43,11 @@ export interface StudyFlowDB extends DBSchema {
     key: string
     value: StudySession
     indexes: { 'by-startedAt': number }
+  }
+  attempts: {
+    key: string
+    value: AnswerRecord
+    indexes: { 'by-questionId': string; 'by-answeredAt': number }
   }
 }
 
@@ -81,6 +88,14 @@ export function getDB(): Promise<IDBPDatabase<StudyFlowDB>> {
             }
           }
         }
+        if (oldVersion < 3) {
+          // v2 → v3：新增答题记录存储（v3 新实体，无需回填旧数据）。
+          if (!db.objectStoreNames.contains(STORE_ATTEMPTS)) {
+            const attempts = db.createObjectStore(STORE_ATTEMPTS, { keyPath: 'id' })
+            attempts.createIndex('by-questionId', 'questionId')
+            attempts.createIndex('by-answeredAt', 'answeredAt')
+          }
+        }
       },
       blocked() {
         console.error('数据库被旧版本页面占用，无法升级，请关闭其他 StudyFlow 窗口后重试')
@@ -113,7 +128,14 @@ export async function clearAllData(): Promise<void> {
   try {
     const db = await getDB()
     const tx = db.transaction(
-      [STORE_DOCUMENTS, STORE_CARDS, STORE_QUESTIONS, STORE_WRONG_ANSWERS, STORE_SESSIONS],
+      [
+        STORE_DOCUMENTS,
+        STORE_CARDS,
+        STORE_QUESTIONS,
+        STORE_WRONG_ANSWERS,
+        STORE_SESSIONS,
+        STORE_ATTEMPTS
+      ],
       'readwrite'
     )
     await Promise.all([
@@ -121,7 +143,8 @@ export async function clearAllData(): Promise<void> {
       tx.objectStore(STORE_CARDS).clear(),
       tx.objectStore(STORE_QUESTIONS).clear(),
       tx.objectStore(STORE_WRONG_ANSWERS).clear(),
-      tx.objectStore(STORE_SESSIONS).clear()
+      tx.objectStore(STORE_SESSIONS).clear(),
+      tx.objectStore(STORE_ATTEMPTS).clear()
     ])
     await tx.done
   } catch (error) {

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Button, EmptyState, useToast } from '../components/ui'
+import { GenerateModal } from '../components/GenerateModal'
 import { MarkdownReader, loadDocumentText } from '../components/readers/MarkdownReader'
 import { PdfReader } from '../components/readers/PdfReader'
 import { useAsyncData, errorMessage } from '../hooks/useAsyncData'
 import { getDocument, updateDocument, type StudyDocument } from '../db'
 import { formatFileSize } from '../format'
 import type { TocItem } from '../lib/markdown'
+import type { GenerationKind } from '../hooks/useGenerate'
 
 export function DocumentDetailPage({
   docId,
@@ -26,6 +28,7 @@ export function DocumentDetailPage({
   const [loadError, setLoadError] = useState<string | null>(null)
   const [readerKey, setReaderKey] = useState(0)
   const [relinking, setRelinking] = useState(false)
+  const [generateKind, setGenerateKind] = useState<GenerationKind | null>(null)
 
   // Markdown 内容加载（PDF 由 PdfReader 自行加载）
   useEffect(() => {
@@ -79,6 +82,7 @@ export function DocumentDetailPage({
   const comingSoon = (): void => {
     push('该功能将在下一阶段（AI 智能生成）开放', 'info')
   }
+  void comingSoon
 
   if (docData.loading) {
     return (
@@ -136,10 +140,10 @@ export function DocumentDetailPage({
           </div>
         </div>
         <div className="page-actions">
-          <Button variant="primary" icon="cards" onClick={comingSoon}>
+          <Button variant="primary" icon="cards" onClick={() => setGenerateKind('cards')}>
             生成知识卡片
           </Button>
-          <Button variant="primary" icon="quiz" onClick={comingSoon}>
+          <Button variant="primary" icon="quiz" onClick={() => setGenerateKind('questions')}>
             生成练习题
           </Button>
         </div>
@@ -174,6 +178,14 @@ export function DocumentDetailPage({
           <Button onClick={() => onNavigate('cards')}>查看知识卡片</Button>
         </div>
       ) : null}
+
+      <GenerateModal
+        open={generateKind !== null}
+        kind={generateKind ?? 'cards'}
+        doc={doc}
+        onClose={() => setGenerateKind(null)}
+        onSaved={() => undefined}
+      />
     </div>
   )
 }

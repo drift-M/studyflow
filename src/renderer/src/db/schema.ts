@@ -33,6 +33,9 @@ export interface StudyDocument {
   updatedAt: number
 }
 
+/** 卡片掌握状态 */
+export type CardMastery = 'unrated' | 'mastered' | 'unfamiliar'
+
 /** 知识卡片 */
 export interface KnowledgeCard {
   id: string
@@ -41,6 +44,11 @@ export interface KnowledgeCard {
   front: string
   back: string
   tags: string[]
+  /** 补充解释（生成卡片时为原文依据） */
+  explanation?: string
+  /** 来源章节（Markdown）或页码（PDF），如 "第 3 页"；手动创建为 null */
+  sourceChapter?: string | null
+  mastery?: CardMastery
   reviewCount: number
   lastReviewedAt: number | null
   /** 下次应复习时间；新卡片等于创建时间（立即可复习） */
@@ -49,7 +57,7 @@ export interface KnowledgeCard {
   updatedAt: number
 }
 
-export type QuizType = 'choice' | 'short'
+export type QuizType = 'choice' | 'judge' | 'short'
 
 /** 练习题 */
 export interface QuizQuestion {
@@ -57,11 +65,26 @@ export interface QuizQuestion {
   documentId: string | null
   type: QuizType
   question: string
-  /** choice 选项文本 */
+  /** choice/judge 选项文本（judge 固定为 ['正确','错误']）；short 为空数组 */
   options: string[]
-  /** choice 为正确选项下标；short 为参考答案文本 */
+  /** choice/judge 为正确选项下标；short 为参考答案文本 */
   answer: number | string
   explanation?: string
+  /** 来源章节（Markdown）或页码（PDF）；手动创建为 null */
+  sourceChapter?: string | null
+  createdAt: number
+  updatedAt: number
+}
+
+/** 答题记录（不可变事件） */
+export interface AnswerRecord {
+  id: string
+  questionId: string
+  questionType: QuizType
+  /** 客观题自动判分；简答题为用户自评结果 */
+  isCorrect: boolean
+  userAnswerText: string
+  answeredAt: number
   createdAt: number
   updatedAt: number
 }

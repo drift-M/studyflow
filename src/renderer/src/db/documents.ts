@@ -1,4 +1,4 @@
-import { getDB, dbError, newId, STORE_DOCUMENTS, STORE_CARDS, STORE_QUESTIONS, STORE_WRONG_ANSWERS } from './database'
+import { getDB, dbError, newId, STORE_DOCUMENTS, STORE_CARDS, STORE_QUESTIONS, STORE_WRONG_ANSWERS, STORE_ATTEMPTS } from './database'
 import type { StudyDocument } from './schema'
 
 export interface NewStudyDocumentInput {
@@ -96,14 +96,15 @@ export async function updateDocument(
 }
 
 /**
- * 删除资料并级联删除其关联的知识卡片、练习题与对应错题记录。
+ * 删除资料并级联删除其关联的知识卡片、练习题、对应错题记录与答题记录。
+ * 只删除知页数据库中的记录，绝不触碰用户电脑上的原始文件。
  * 返回资料是否真实存在并被删除。
  */
 export async function deleteDocument(id: string): Promise<boolean> {
   try {
     const db = await getDB()
     const tx = db.transaction(
-      [STORE_DOCUMENTS, STORE_CARDS, STORE_QUESTIONS, STORE_WRONG_ANSWERS],
+      [STORE_DOCUMENTS, STORE_CARDS, STORE_QUESTIONS, STORE_WRONG_ANSWERS, STORE_ATTEMPTS],
       'readwrite'
     )
     const docStore = tx.objectStore(STORE_DOCUMENTS)
@@ -122,6 +123,13 @@ export async function deleteDocument(id: string): Promise<boolean> {
         .getAll(question.id)
       for (const wrong of wrongs) {
         await tx.objectStore(STORE_WRONG_ANSWERS).delete(wrong.id)
+      }
+      const attempts = await tx
+        .objectStore(STORE_ATTEMPTS)
+        .index('by-questionId')
+        .getAll(question.id)
+      for (const attempt of attempts) {
+        await tx.objectStore(STORE_ATTEMPTS).delete(attempt.id)
       }
       await tx.objectStore(STORE_QUESTIONS).delete(question.id)
     }

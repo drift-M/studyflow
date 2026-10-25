@@ -10,6 +10,8 @@ import {
   countDocuments
 } from '../documents'
 import {
+  markCardMastery,
+  updateCard,
   createCard,
   getCard,
   listCards,
@@ -19,6 +21,7 @@ import {
   reviewCard,
   deleteCard
 } from '../cards'
+import { addAnswerRecord, listAttemptsByQuestion } from '../answers'
 import {
   createQuestion,
   listQuestions,
@@ -148,7 +151,8 @@ describe('学习资料 CRUD', () => {
     })
     const card = await createCard({ documentId: doc.id, front: '正面', back: '背面' })
     const question = await createQuestion({
-      documentId: doc.id,
+        documentId: doc.id,
+        type: 'choice' as const,
       question: '题目',
       options: ['A 选项', 'B 选项'],
       answerIndex: 0
@@ -217,7 +221,8 @@ describe('练习题', () => {
       content: 'd'
     })
     const question = await createQuestion({
-      documentId: doc.id,
+        documentId: doc.id,
+        type: 'choice' as const,
       question: '1+1=?',
       options: ['1', '2', '3', '4'],
       answerIndex: 1,
@@ -230,15 +235,16 @@ describe('练习题', () => {
 
   it('选项不足两个或答案越界时创建被拒绝', async () => {
     await expect(
-      createQuestion({ question: 'Q', options: ['唯一'], answerIndex: 0 })
+      createQuestion({ type: 'choice' as const, question: 'Q', options: ['唯一'], answerIndex: 0 })
     ).rejects.toThrow('至少需要两个非空选项')
     await expect(
-      createQuestion({ question: 'Q', options: ['A', 'B'], answerIndex: 5 })
+      createQuestion({ type: 'choice' as const, question: 'Q', options: ['A', 'B'], answerIndex: 5 })
     ).rejects.toThrow('不在选项范围内')
   })
 
   it('删除题目会级联删除其错题记录', async () => {
     const question = await createQuestion({
+      type: 'choice' as const,
       question: 'Q',
       options: ['A', 'B'],
       answerIndex: 0
@@ -258,6 +264,7 @@ describe('练习题', () => {
 describe('错题本', () => {
   async function makeQuestion(): Promise<string> {
     const question = await createQuestion({
+      type: 'choice' as const,
       question: '题目',
       options: ['A', 'B'],
       answerIndex: 0
@@ -329,5 +336,100 @@ describe('学习记录', () => {
       durationSec: -5
     })
     expect(session.durationSec).toBe(0)
+  })
+})
+
+describe('判断题与简答题（阶段 4）', () => {
+  it('创建判断题时选项固定为 正确/错误', async () => {
+    const question = await createQuestion({
+      type: 'judge',
+      question: '监督学习使用有标注数据。',
+      answerIndex: 0
+    })
+    expect(question.options).toEqual(['正确', '错误'])
+    expect(question.answer).toBe(0)
+  })
+
+  it('创建简答题，参考答案存入 answer 字段', async () => {
+    const question = await createQuestion({
+      type: 'short',
+      question: '简述过拟合。',
+      answerText: '模型过度拟合训练数据噪声，泛化能力差'
+    })
+    expect(question.options).toEqual([])
+    expect(question.answer).toBe('模型过度拟合训练数据噪声，泛化能力差')
+  })
+
+  it('判断题答案越界、简答缺参考答案时创建被拒绝', async () => {
+    await expect(
+      createQuestion({ type: 'judge', question: 'q', answerIndex: 5 })
+    ).rejects.toThrow('正确」或「错误')
+    await expect(createQuestion({ type: 'short', question: 'q' })).rejects.toThrow('参考答案')
+  })
+})
+
+describe('答题记录（阶段 4）', () => {
+  it('保存后可按题目查询，记录不可变字段完整', async () => {
+    const question = await createQuestion({
+      type: 'choice',
+      question: '1+1=?',
+      options: ['1', '2'],
+      answerIndex: 1
+    })
+    const record = await addAnswerRecord({
+      questionId: question.id,
+      questionType: 'choice',
+      isCorrect: false,
+      userAnswerText: 'A、1'
+    })
+    expect(record.id).toBeTruthy()
+    expect(record.isCorrect).toBe(false)
+    const list = await listAttemptsByQuestion(question.id)
+    expect(list).toHaveLength(1)
+    expect(list[0].userAnswerText).toBe('A、1')
+  })
+
+  it('删除题目会级联删除答题记录', async () => {
+    const question = await createQuestion({
+      type: 'judge',
+      question: 'q',
+      answerIndex: 1
+    })
+    await addAnswerRecord({
+      questionId: question.id,
+      questionType: 'judge',
+      isCorrect: true,
+      userAnswerText: '错误'
+    })
+    await deleteQuestion(question.id)
+    expect(await listAttemptsByQuestion(question.id)).toHaveLength(0)
+  })
+})
+
+describe('卡片掌握标记（阶段 4）', () => {
+  it('标记掌握：计数+1 且 24 小时内不计待复习', async () => {
+    const card = await createCard({ front: 'F', back: 'B' })
+    const mastered = await markCardMastery(card.id, 'mastered')
+    expect(mastered?.mastery).toBe('mastered')
+    expect(mastered?.reviewCount).toBe(1)
+    expect(await countDueCards()).toBe(0)
+  })
+
+  it('标记不熟悉：立即回到待复习队列', async () => {
+    const card = await createCard({ front: 'F', back: 'B' })
+    await markCardMastery(card.id, 'mastered')
+    expect(await countDueCards()).toBe(0)
+    const unfamiliar = await markCardMastery(card.id, 'unfamiliar')
+    expect(unfamiliar?.mastery).toBe('unfamiliar')
+    expect(await countDueCards()).toBe(1)
+  })
+
+  it('编辑卡片内容后正常保存', async () => {
+    const card = await createCard({ front: '旧', back: '旧答' })
+    const updated = await updateCard(card.id, { front: '新问题', explanation: '解释' })
+    expect(updated?.front).toBe('新问题')
+    expect(updated?.back).toBe('旧答')
+    expect(updated?.explanation).toBe('解释')
+    expect(await updateCard('不存在', { front: 'x' })).toBeUndefined()
   })
 })
