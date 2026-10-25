@@ -1,0 +1,19 @@
+node_modules
+dist
+out
+release
+.DS_Store
+Thumbs.db
+.eslintcache
+*.log*
+
+# 本地环境变量与密钥，绝不提交
+.env
+.env.*
+*.local
+*.pem
+*.key
+
+# 本地用户数据与临时文件
+user-data/
+tmp/
