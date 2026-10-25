@@ -1,22 +1,17 @@
-import { contextBridge } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge, ipcRenderer } from 'electron'
+import type { StudyFlowApi } from './api-types'
 
-// Custom APIs for renderer
-const api = {}
+/**
+ * 只暴露最小化、明确的 IPC API。
+ * 渲染进程拿不到 ipcRenderer 本身，也无法直接访问任何 Node.js 能力。
+ */
+const api: StudyFlowApi = {
+  selectStudyFile: () => ipcRenderer.invoke('studyflow:select-file'),
+  readStudyFile: (filePath) => ipcRenderer.invoke('studyflow:read-file', filePath)
+}
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
-if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
-  } catch (error) {
-    console.error(error)
-  }
-} else {
-  // @ts-ignore (define in dts)
-  window.electron = electronAPI
-  // @ts-ignore (define in dts)
-  window.api = api
+try {
+  contextBridge.exposeInMainWorld('api', api)
+} catch (error) {
+  console.error('暴露 preload API 失败', error)
 }

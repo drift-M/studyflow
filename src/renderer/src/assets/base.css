@@ -1,34 +1,34 @@
+/* ===== 设计令牌与基础重置 ===== */
 :root {
-  --ev-c-white: #ffffff;
-  --ev-c-white-soft: #f8f8f8;
-  --ev-c-white-mute: #f2f2f2;
+  /* 主色 */
+  --primary: #4f6ef7;
+  --primary-strong: #3d5bf0;
+  --primary-weak: #eef1fe;
 
-  --ev-c-black: #1b1b1f;
-  --ev-c-black-soft: #222222;
-  --ev-c-black-mute: #282828;
+  /* 背景/表面/边框 */
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --border: #e6e8ec;
+  --border-weak: #f0f1f4;
+  --border-strong: #d5d8de;
+  --fill-hover: #f2f3f5;
 
-  --ev-c-gray-1: #515c67;
-  --ev-c-gray-2: #414853;
-  --ev-c-gray-3: #32363f;
+  /* 文字 */
+  --text-1: #1f2329;
+  --text-2: #4e5561;
+  --text-3: #8a919c;
 
-  --ev-c-text-1: rgba(255, 255, 245, 0.86);
-  --ev-c-text-2: rgba(235, 235, 245, 0.6);
-  --ev-c-text-3: rgba(235, 235, 245, 0.38);
+  /* 语义色 */
+  --danger: #d93036;
+  --danger-weak: #fdeaea;
+  --success: #1f9d61;
+  --success-weak: #e5f5ec;
+  --warn: #b7791f;
+  --warn-weak: #fdf3e0;
+  --info-weak: #eaf1fd;
 
-  --ev-button-alt-border: transparent;
-  --ev-button-alt-text: var(--ev-c-text-1);
-  --ev-button-alt-bg: var(--ev-c-gray-3);
-  --ev-button-alt-hover-border: transparent;
-  --ev-button-alt-hover-text: var(--ev-c-text-1);
-  --ev-button-alt-hover-bg: var(--ev-c-gray-2);
-}
-
-:root {
-  --color-background: var(--ev-c-black);
-  --color-background-soft: var(--ev-c-black-soft);
-  --color-background-mute: var(--ev-c-black-mute);
-
-  --color-text: var(--ev-c-text-1);
+  --radius: 10px;
+  --shadow-pop: 0 8px 28px rgba(31, 35, 41, 0.14);
 }
 
 *,
@@ -36,32 +36,52 @@
 *::after {
   box-sizing: border-box;
   margin: 0;
-  font-weight: normal;
 }
 
-ul {
-  list-style: none;
+html,
+body,
+#root {
+  height: 100%;
 }
 
 body {
-  min-height: 100vh;
-  color: var(--color-text);
-  background: var(--color-background);
-  line-height: 1.6;
   font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
     'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Fira Sans',
-    'Droid Sans',
-    'Helvetica Neue',
+    'Microsoft YaHei',
+    system-ui,
+    -apple-system,
+    'PingFang SC',
     sans-serif;
-  text-rendering: optimizeLegibility;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-1);
+  background: var(--bg);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d0d3d9;
+  border-radius: 6px;
+  border: 2px solid var(--bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b8bdc6;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }
